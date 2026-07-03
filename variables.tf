@@ -32,4 +32,22 @@ variable "health_check_schedule" {
 variable "alert_email" {
   description = "Email address for CloudOps alert notifications."
   type        = string
+  default     = "ron.harvey2020@gmail.com"
+}
+
+variable "health_check_timeout_seconds" {
+  description = "Timeout in seconds for each individual workload health check."
+  type        = number
+  default     = 10
+}
+
+variable "workloads" {
+  description = "List of workload endpoints checked by the CloudOps health checker Lambda."
+  type = list(object({
+    name            = string
+    url             = string
+    expected_status = optional(number, 200)
+    runbook_url     = optional(string, "")
+  }))
+  default = []
 }
