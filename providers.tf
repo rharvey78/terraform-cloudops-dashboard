@@ -2,6 +2,14 @@
 terraform {
   required_version = ">= 1.6.0"
 
+  cloud {
+    organization = "rharvey-org"
+
+    workspaces {
+      name = "terraform-cloudops-dashboard"
+    }
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
