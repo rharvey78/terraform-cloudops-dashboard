@@ -94,11 +94,20 @@ def lambda_handler(event, context):
 
     critical_count = sum(1 for item in results if item["status"] == "critical")
 
+    summary = {
+        "event_type": "health_check_summary",
+        "checked_at": utc_now_iso(),
+        "workloads_checked": len(results),
+        "critical_count": critical_count,
+    }
+
+    print(json.dumps(summary))
+
     return {
         "statusCode": 200,
         "body": json.dumps(
             {
-                "checked_at": utc_now_iso(),
+                "checked_at": summary["checked_at"],
                 "workloads_checked": len(results),
                 "critical_count": critical_count,
                 "results": results,
