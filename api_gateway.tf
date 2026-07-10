@@ -80,6 +80,9 @@ resource "aws_lambda_permission" "allow_api_gateway_status_api" {
 # base invoke URL without requiring a stage name in the path.
 #
 # auto_deploy automatically deploys API configuration changes.
+#
+# Access logging sends one structured JSON log entry for each
+# API request to the CloudWatch log group defined separately.
 # ============================================================
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -87,6 +90,24 @@ resource "aws_apigatewayv2_stage" "default" {
 
   name        = "$default"
   auto_deploy = true
+
+  # Send API request access logs to CloudWatch Logs.
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_access_logs.arn
+
+    # Store each request as structured JSON for easier searching
+    # and filtering in CloudWatch Logs Insights.
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      sourceIp       = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+    })
+  }
 
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-default-stage"
