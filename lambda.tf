@@ -164,3 +164,25 @@ resource "aws_lambda_function" "status_api" {
     Name = "${local.name_prefix}-status-api"
   })
 }
+
+
+# ============================================================
+# Default API Gateway stage
+#
+# The $default stage exposes the API directly from the base
+# invoke URL without requiring an extra stage name in the path.
+#
+# auto_deploy ensures future API changes are deployed
+# automatically after Terraform updates the API configuration.
+# ============================================================
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id = aws_apigatewayv2_api.cloudops_api.id
+
+  name        = "$default"
+  auto_deploy = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-default-stage"
+  })
+}
