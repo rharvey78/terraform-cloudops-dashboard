@@ -16,6 +16,7 @@ resource "aws_apigatewayv2_api" "cloudops_api" {
   })
 }
 
+
 # ============================================================
 # API Gateway integration with the Status API Lambda
 #
@@ -32,4 +33,22 @@ resource "aws_apigatewayv2_integration" "status_api_lambda" {
   integration_uri    = aws_lambda_function.status_api.invoke_arn
 
   payload_format_version = "2.0"
+}
+
+
+# ============================================================
+# GET /status route
+#
+# This route maps HTTP GET requests for /status to the
+# Status API Lambda integration defined above.
+# ============================================================
+
+resource "aws_apigatewayv2_route" "status" {
+  api_id = aws_apigatewayv2_api.cloudops_api.id
+
+  # Public HTTP route used by the dashboard frontend.
+  route_key = "GET /status"
+
+  # Send matching requests to the Status API Lambda integration.
+  target = "integrations/${aws_apigatewayv2_integration.status_api_lambda.id}"
 }
