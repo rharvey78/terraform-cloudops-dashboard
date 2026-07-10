@@ -52,3 +52,4 @@ resource "aws_apigatewayv2_route" "status" {
   # Send matching requests to the Status API Lambda integration.
   target = "integrations/${aws_apigatewayv2_integration.status_api_lambda.id}"
 }
+
