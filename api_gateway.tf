@@ -71,3 +71,24 @@ resource "aws_lambda_permission" "allow_api_gateway_status_api" {
   # Restrict invocation permission to this API Gateway HTTP API.
   source_arn = "${aws_apigatewayv2_api.cloudops_api.execution_arn}/*/*"
 }
+
+
+# ============================================================
+# Default API Gateway stage
+#
+# The $default stage exposes the HTTP API directly from the
+# base invoke URL without requiring a stage name in the path.
+#
+# auto_deploy automatically deploys API configuration changes.
+# ============================================================
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id = aws_apigatewayv2_api.cloudops_api.id
+
+  name        = "$default"
+  auto_deploy = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-default-stage"
+  })
+}
