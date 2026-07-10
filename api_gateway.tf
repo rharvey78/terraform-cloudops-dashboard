@@ -53,3 +53,21 @@ resource "aws_apigatewayv2_route" "status" {
   target = "integrations/${aws_apigatewayv2_integration.status_api_lambda.id}"
 }
 
+
+# ============================================================
+# Allow API Gateway to invoke the Status API Lambda
+#
+# Lambda permissions are resource-based. Even though API Gateway
+# is connected to the Lambda integration, Lambda must explicitly
+# allow API Gateway to invoke the function.
+# ============================================================
+
+resource "aws_lambda_permission" "allow_api_gateway_status_api" {
+  statement_id  = "AllowAPIGatewayStatusAPIInvocation"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.status_api.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  # Restrict invocation permission to this API Gateway HTTP API.
+  source_arn = "${aws_apigatewayv2_api.cloudops_api.execution_arn}/*/*"
+}
