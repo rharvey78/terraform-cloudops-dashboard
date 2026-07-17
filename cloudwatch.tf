@@ -96,3 +96,52 @@ resource "aws_cloudwatch_log_metric_filter" "workload_critical_count" {
     unit = "Count"
   }
 }
+
+
+# ============================================================
+# Workload critical status alarm
+#
+# Monitors the custom WorkloadCriticalCount metric created from
+# Health Checker Lambda structured log events.
+#
+# This alarm enters ALARM state when one or more monitored
+# workloads are reported as critical.
+#
+# This is different from the Lambda execution error alarm:
+# - Lambda error alarm = the monitoring function itself failed
+# - Workload critical alarm = a monitored workload failed
+# ============================================================
+
+resource "aws_cloudwatch_metric_alarm" "workload_critical_count" {
+  alarm_name        = "${local.name_prefix}-workload-critical-count"
+  alarm_description = "Alerts when one or more monitored workloads report critical health status."
+
+  namespace   = "CloudOpsIncidentDashboard"
+  metric_name = "WorkloadCriticalCount"
+
+  # Use the maximum reported critical count during the period.
+  # If any Health Checker run reports 1 or more critical workloads,
+  # the alarm should fire.
+  statistic = "Maximum"
+
+  # Match the Health Checker schedule, which currently runs once per hour.
+  period = 3600
+
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = 1
+
+  # Do not alarm just because no recent metric data exists.
+  treat_missing_data = "notBreaching"
+
+  # Send workload health alerts to the CloudOps SNS topic.
+  alarm_actions = [
+    aws_sns_topic.cloudops_alerts.arn
+  ]
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-workload-critical-count"
+  })
+}
