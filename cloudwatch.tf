@@ -66,3 +66,33 @@ resource "aws_cloudwatch_metric_alarm" "health_checker_lambda_errors" {
     Name = "${local.name_prefix}-health-checker-errors"
   })
 }
+
+
+# ============================================================
+# Workload critical count metric filter
+#
+# Reads the structured health_check_summary JSON log events
+# written by the Health Checker Lambda and extracts the
+# critical_count value.
+#
+# This turns log data into a custom CloudWatch metric that can
+# be alarmed on separately from Lambda execution errors.
+# ============================================================
+
+resource "aws_cloudwatch_log_metric_filter" "workload_critical_count" {
+  name           = "${local.name_prefix}-workload-critical-count"
+  log_group_name = aws_cloudwatch_log_group.health_checker.name
+
+  # Match only structured summary log events from the Health Checker Lambda.
+  pattern = "{ $.event_type = \"health_check_summary\" }"
+
+  metric_transformation {
+    name      = "WorkloadCriticalCount"
+    namespace = "CloudOpsIncidentDashboard"
+
+    # Use the critical_count field from the JSON log event as the metric value.
+    value = "$.critical_count"
+
+    unit = "Count"
+  }
+}
