@@ -30,3 +30,5 @@ Thumbs.db
 *.crt
 *.keys
 .env
+# Local AWS CLI Lambda invoke output
+response.json
