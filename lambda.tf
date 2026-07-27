@@ -150,7 +150,7 @@ resource "aws_lambda_function" "status_api" {
   environment {
     variables = {
       TABLE_NAME          = aws_dynamodb_table.cloudops_status.name
-      STALE_AFTER_MINUTES = "1"
+      STALE_AFTER_MINUTES = "120"
     }
   }
 
