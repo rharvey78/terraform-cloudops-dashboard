@@ -146,10 +146,11 @@ resource "aws_lambda_function" "status_api" {
   timeout     = 10
   memory_size = 128
 
-  # Pass the DynamoDB table name into the Python code.
+  # Pass configuration values into the Status API Lambda.
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.cloudops_status.name
+      TABLE_NAME          = aws_dynamodb_table.cloudops_status.name
+      STALE_AFTER_MINUTES = "120"
     }
   }
 
