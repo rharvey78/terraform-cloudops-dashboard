@@ -228,6 +228,162 @@ def validate_weather_pipeline(
     )
 
 
+def validate_privateops_backend(response_body):
+    """
+    Validate the PrivateOps API response.
+
+    A healthy PrivateOps backend must return the expected private-network
+    architecture state along with the summary and detail sections required
+    by the frontend dashboard.
+    """
+    try:
+        payload = json.loads(response_body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        return (
+            "critical",
+            f"PrivateOps API returned invalid JSON: {type(error).__name__}",
+            {},
+        )
+
+    if not isinstance(payload, dict):
+        return (
+            "critical",
+            "PrivateOps API response was not a JSON object",
+            {},
+        )
+
+    # These values describe the expected architecture state of the demo.
+    expected_values = {
+        "backend_status": "private-backend-operational",
+        "backend_exposure": "not-public",
+        "vpc_mode": "cost-controlled-demo",
+        "nat_gateway": "disabled",
+        "s3_gateway_endpoint": "enabled",
+        "dynamodb_gateway_endpoint": "enabled",
+    }
+
+    missing_fields = [
+        field
+        for field in expected_values
+        if field not in payload
+    ]
+
+    if missing_fields:
+        return (
+            "critical",
+            "PrivateOps response is missing required fields: "
+            + ", ".join(missing_fields),
+            {},
+        )
+
+    # Retain useful architecture values in the CloudOps status record.
+    result_details = {
+        field: payload.get(field)
+        for field in expected_values
+    }
+
+    mismatches = [
+        (
+            f"{field} expected {expected_value}, "
+            f"received {payload.get(field)}"
+        )
+        for field, expected_value in expected_values.items()
+        if payload.get(field) != expected_value
+    ]
+
+    if mismatches:
+        return (
+            "critical",
+            "PrivateOps architecture state mismatch: "
+            + "; ".join(mismatches),
+            result_details,
+        )
+
+    summary = payload.get("summary")
+
+    if not isinstance(summary, dict):
+        return (
+            "critical",
+            "PrivateOps response is missing the summary object",
+            result_details,
+        )
+
+    required_summary_fields = (
+        "service_count",
+        "open_incidents",
+        "pending_jobs",
+        "recent_events",
+    )
+
+    missing_summary_fields = [
+        field
+        for field in required_summary_fields
+        if field not in summary
+    ]
+
+    if missing_summary_fields:
+        return (
+            "critical",
+            "PrivateOps summary is missing required fields: "
+            + ", ".join(missing_summary_fields),
+            result_details,
+        )
+
+    # Store the counts for troubleshooting and dashboard visibility.
+    for field in required_summary_fields:
+        value = summary.get(field)
+
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return (
+                "critical",
+                f"PrivateOps summary field {field} is not numeric",
+                result_details,
+            )
+
+        result_details[field] = int(value)
+
+    detail = payload.get("data")
+
+    if not isinstance(detail, dict):
+        return (
+            "critical",
+            "PrivateOps response is missing the data object",
+            result_details,
+        )
+
+    required_detail_sections = (
+        "service_health",
+        "open_incidents",
+        "pending_jobs",
+        "recent_events",
+        "architecture_status",
+        "cost_guardrails",
+    )
+
+    invalid_detail_sections = [
+        field
+        for field in required_detail_sections
+        if not isinstance(detail.get(field), list)
+    ]
+
+    if invalid_detail_sections:
+        return (
+            "critical",
+            "PrivateOps response contains missing or invalid detail sections: "
+            + ", ".join(invalid_detail_sections),
+            result_details,
+        )
+
+    return (
+        "healthy",
+        (
+            "PrivateOps backend healthy. "
+            "API returned the expected private-backend state."
+        ),
+        result_details,
+    )
+
+
 def check_url(workload):
     """Run one configured workload health check."""
     name = workload["name"]
@@ -256,8 +412,8 @@ def check_url(workload):
         ) as response:
             http_status = response.getcode()
 
-            # The Weather response is small, but impose a reasonable maximum
-            # so the health checker does not read an unlimited response body.
+            # API responses are expected to be small. Impose a reasonable
+            # limit so the checker does not read an unlimited response body.
             response_body = response.read(1_000_000)
 
         latency_ms = int((time.perf_counter() - started) * 1000)
@@ -275,6 +431,11 @@ def check_url(workload):
                 response_body=response_body,
                 max_data_age_minutes=max_data_age_minutes,
                 evaluated_at=evaluated_at,
+            )
+
+        elif check_type == "privateops_backend":
+            status, message, result_details = validate_privateops_backend(
+                response_body=response_body,
             )
 
         else:
@@ -312,8 +473,8 @@ def check_url(workload):
         "runbook_url": runbook_url,
     }
 
-    # Add pipeline-specific values such as observation age without changing
-    # the records produced by ordinary HTTP checks.
+    # Add workload-specific values such as observation age or
+    # PrivateOps architecture details to the DynamoDB item.
     item.update(result_details)
 
     table.put_item(Item=item)
