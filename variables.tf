@@ -43,11 +43,33 @@ variable "health_check_timeout_seconds" {
 
 variable "workloads" {
   description = "List of workload endpoints checked by the CloudOps health checker Lambda."
+
   type = list(object({
-    name            = string
-    url             = string
+    # Human-readable workload identifier.
+    name = string
+
+    # Endpoint checked by the Health Checker Lambda.
+    url = string
+
+    # HTTP response code considered successful.
     expected_status = optional(number, 200)
-    runbook_url     = optional(string, "")
+
+    # Documented response procedure for a failed check.
+    runbook_url = optional(string, "")
+
+    # HTTP method used for the request.
+    method = optional(string, "GET")
+
+    # Optional JSON request body used by POST-based health checks.
+    request_body = optional(map(string), {})
+
+    # Determines whether the checker performs only an HTTP check
+    # or applies workload-specific response validation.
+    check_type = optional(string, "http")
+
+    # Maximum acceptable age of timestamped pipeline data.
+    max_data_age_minutes = optional(number, 5)
   }))
+
   default = []
 }
