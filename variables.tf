@@ -42,7 +42,7 @@ variable "health_check_timeout_seconds" {
 }
 
 variable "workloads" {
-  description = "List of workload endpoints checked by the CloudOps health checker Lambda."
+  description = "List of workloads checked by the CloudOps health checker Lambda."
 
   type = list(object({
     # Human-readable workload identifier.
@@ -69,6 +69,10 @@ variable "workloads" {
 
     # Maximum acceptable age of timestamped pipeline data.
     max_data_age_minutes = optional(number, 5)
+
+    # CloudWatch alarm names inspected by alarm-based operational checks.
+    # This remains empty for ordinary HTTP and API health checks.
+    alarm_names = optional(list(string), [])
   }))
 
   default = []
