@@ -29,5 +29,7 @@ Thumbs.db
 *.crt
 *.keys
 .env
-# Local AWS CLI Lambda invoke output
+
+# Local AWS CLI / health-check output
 response.json
+health-check-response.json
