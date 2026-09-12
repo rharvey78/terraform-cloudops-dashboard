@@ -29,10 +29,13 @@ variable "health_check_schedule" {
   default     = "rate(1 hour)"
 }
 
+# Alert destination is intentionally not hard-coded in source control.
+# Supply this value through the Terraform Cloud workspace or another
+# appropriate variable source.
 variable "alert_email" {
   description = "Email address for CloudOps alert notifications."
   type        = string
-  default     = "ron.harvey2020@gmail.com"
+  sensitive   = true
 }
 
 variable "health_check_timeout_seconds" {
