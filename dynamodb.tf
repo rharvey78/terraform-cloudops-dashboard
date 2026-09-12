@@ -16,9 +16,10 @@ resource "aws_dynamodb_table" "cloudops_status" {
     type = "S"
   }
 
+  # The table stores only the latest operational status for each workload,
+  # so record expiration is not required. Keep TTL explicitly disabled.
   ttl {
-    attribute_name = "expires_at"
-    enabled        = true
+    enabled = false
   }
 
   tags = merge(local.common_tags, {
