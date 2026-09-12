@@ -14,7 +14,7 @@ The goal is not to reproduce an enterprise monitoring platform. It is to demonst
 - CloudWatch alarm-state monitoring
 - DynamoDB-backed operational state
 - Stale-monitoring detection
-- Public status API for dashboard use
+- Read-only status API for dashboard use
 - CloudWatch custom metrics and alarms
 - SNS email notifications
 - Runbook-driven incident response
@@ -108,7 +108,7 @@ A healthy alarm-based check requires:
 
 `ALARM`, `INSUFFICIENT_DATA`, or a missing alarm is treated as a critical result.
 
-This pattern is currently used for weather-pipeline monitoring so routine CloudOps checks do not unnecessarily invoke the Timestream-backed weather data API.
+This pattern is currently used for weather data-pipeline monitoring so routine CloudOps checks do not unnecessarily invoke the Timestream-backed weather data API.
 
 ## Cost Optimization: Weather Monitoring Redesign
 
@@ -302,7 +302,7 @@ The project treats cost as an operational constraint rather than something to re
 
 ## Terraform
 
-Infrastructure is managed with Terraform and deployed through a remote Terraform workspace.
+Infrastructure is managed with Terraform and deployed through HCP Terraform using a VCS-driven workflow connected to this GitHub repository.
 
 Terraform manages:
 
@@ -322,6 +322,8 @@ Workload definitions are supplied through the `workloads` variable rather than b
 
 ```text
 .
+|-- .gitignore
+|-- .terraform.lock.hcl
 |-- README.md
 |-- api_gateway.tf
 |-- cloudwatch.tf
