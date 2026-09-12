@@ -124,8 +124,8 @@ resource "aws_cloudwatch_metric_alarm" "workload_critical_count" {
   # the alarm should fire.
   statistic = "Maximum"
 
-  # Match the Health Checker schedule, which currently runs once per hour (3600).  Currently using 300 (5 mins) for a shorter testing time window
-  period = 300
+  # Match the Health Checker schedule, which runs once per hour.
+  period = 3600
 
   evaluation_periods  = 1
   datapoints_to_alarm = 1
